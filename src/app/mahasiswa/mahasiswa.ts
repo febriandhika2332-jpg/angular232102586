@@ -3,6 +3,7 @@ import { Sidebar } from "../sidebar/sidebar";
 import { Header } from "../header/header";
 import { Footer } from "../footer/footer";
 import { $locationShim } from '@angular/common/upgrade';
+import { HttpClient } from '@angular/common/http';
 
 declare const $: any;
 
@@ -13,9 +14,45 @@ declare const $: any;
   styleUrl: './mahasiswa.css',
 })
 export class Mahasiswa implements AfterViewInit{
-  constructor() {}
+  data: any;
+  table1: any;
+  constructor(private httpClient: HttpClient) {}
 
   ngAfterViewInit(): void {
-    $("#table1").DataTable();
+    this.table1 = $("#table1").DataTable();
+
+    this.bindMahasiswa();
   }
+
+  bindMahasiswa(): void {
+  this.httpClient.get("https://stmikpontianak.cloud/011100862/tampilMahasiswa.php").subscribe((data: any) => {
+    console.table(data);
+    this.table1.clear();
+
+    data.forEach((element: any) => {
+      var tempatTanggalLahir = element.TempatLahir + ", " + element.TanggalLahir;
+
+      const jenisKelaminFormatted = element.JenisKelamin + " " + (
+        (element.JenisKelamin == "Perempuan" || element.JenisKelamin == "perempuan") ?
+          "<i class='fas fa-venus text-danger'></i>" :
+        (element.JenisKelamin != "undefined") ?
+          "<i class='fas fa-mars text-primary'></i>" : ""
+      );
+
+      var row = [
+        element.NIM, element.Nama,
+        jenisKelaminFormatted,
+        tempatTanggalLahir,
+        element.JP,
+        element.Alamat,
+        element.StatusNikah,
+        element.TahunMasuk
+      ]
+
+      this.table1.row.add(row);
+    });
+
+    this.table1.draw(false);
+  });
+}
 }
