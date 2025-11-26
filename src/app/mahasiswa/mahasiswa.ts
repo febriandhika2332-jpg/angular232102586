@@ -30,7 +30,7 @@ export class Mahasiswa implements AfterViewInit{
   }
 
   bindMahasiswa(): void {
-  this.httpClient.get("https://stmikpontianak.cloud/011100862/tampilMahasiswa.php").subscribe((data: any) => {
+    this.httpClient.get("https://stmikpontianak.cloud/011100862/tampilMahasiswa.php").subscribe((data: any) => {
     console.table(data);
     this.table1.clear();
 
@@ -38,7 +38,7 @@ export class Mahasiswa implements AfterViewInit{
       var tempatTanggalLahir = element.TempatLahir + ", " + element.TanggalLahir;
 
       const jenisKelaminFormatted = element.JenisKelamin + " " + (
-        (element.JenisKelamin == "Laki Laki" || element.JenisKelamin == "Perempuan") ?
+        (element.JenisKelamin == "Perempuan" || element.JenisKelamin == "perempuan") ?
           "<i class='fas fa-venus text-danger'></i>" :
         (element.JenisKelamin != "undefined") ?
           "<i class='fas fa-mars text-primary'></i>" : ""
@@ -59,11 +59,14 @@ export class Mahasiswa implements AfterViewInit{
 
     this.table1.draw(false);
   });
+
   }
-  showTambahModal(): void{
+
+  showTambahModal(): void {
     $("#tambahModal").modal();
   }
-  postRecord(): void{
+
+  postRecord(): void {
     var alamat = $("#alamatText").val();
     var jenisKelamin = $("#jenisKelaminSelect").val();
     var jp = $("#jpSelect").val();
@@ -101,15 +104,15 @@ export class Mahasiswa implements AfterViewInit{
       return;
     }
 
-     alamat = encodeURIComponent(alamat);
-     jenisKelamin = encodeURIComponent(jenisKelamin);
-     jp = encodeURIComponent(jp);
-     nama = encodeURIComponent(nama);
-     nim = encodeURIComponent(nim);
-     statusNikah = encodeURIComponent(statusNikah);
-     tahunMasuk = encodeURIComponent(tahunMasuk);
-     tanggalLahir = encodeURIComponent(tanggalLahir);
-     tempatLahir = encodeURIComponent(tempatLahir);
+    alamat = encodeURIComponent(alamat);
+    jenisKelamin = encodeURIComponent(jenisKelamin);
+    jp = encodeURIComponent(jp);
+    nama = encodeURIComponent(nama);
+    nim = encodeURIComponent(nim);
+    statusNikah = encodeURIComponent(statusNikah);
+    tahunMasuk = encodeURIComponent(tahunMasuk);
+    tanggalLahir = encodeURIComponent(tanggalLahir);
+    tempatLahir = encodeURIComponent(tempatLahir);
 
     var url = "https://stmikpontianak.cloud/011100862/tambahMahasiswa.php" +
     "?alamat=" + alamat +
@@ -131,5 +134,5 @@ export class Mahasiswa implements AfterViewInit{
         $("#tambahModal").modal("hide");
     });
 
-    }
+  }
 }
