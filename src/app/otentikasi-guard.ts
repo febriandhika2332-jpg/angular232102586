@@ -9,13 +9,13 @@ export const otentikasiGuard: CanActivateFn = (route, state) => {
     console.log("userId: " + userId);
 
     if (userId == null) {
-        // Anggap belum login
+
     } else if (userId == "undefined") {
-        // Anggap belum login
+
     } else if (userId == "") {
-        // Anggap belum login
+
     } else {
-        return true; // Sudah login
+        return true;
     }
 
     inject(Router).navigate(["/login"]);

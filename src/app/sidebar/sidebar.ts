@@ -12,37 +12,11 @@ import { HttpClient } from '@angular/common/http'; // <-- BARIS BARU: Import Htt
 // Pastikan nama kelas menggunakan PascalCase: Sidebar
 export class Sidebar implements OnInit { 
     @Input() moduleName: string = "";
-    username: string = "Memuat..."; // Inisialisasi awal
+    username: string = "";
 
-    constructor(
-        private cookieServive: CookieService, 
-        private router: Router,
-        private httpClient: HttpClient // <-- BARIS BARU: Inject HttpClient
-    ) {}
+    constructor(private cookieServive: CookieService, private router: Router,) {}
 
     ngOnInit(): void {
-        const userId = this.cookieServive.get("userId");
-        if (userId) {
-            this.ambilNamaPengguna(userId); // <-- Panggil fungsi API
-        } else {
-            this.username = "Belum Login";
-        }
-    }
-
-    ambilNamaPengguna(userId: string): void {
-        // Ganti dengan URL endpoint mahasiswa Anda
-        const url = "https://stmikpontianak.cloud/011100862/mahasiswa.php?id=" + userId; 
-        
-        // Melakukan panggilan GET ke API
-        this.httpClient.get(url).subscribe((data: any) => {
-            console.log('Data pengguna dari API:', data);
-            
-            // Logika untuk mengambil field 'nama'
-            if (data && data.length > 0) {
-                this.username = data[0].nama; // <-- Mengambil NAMA LENGKAP dari hasil API
-            } else {
-                this.username = userId; // Fallback ke ID jika nama tidak ditemukan
-            }
-        });
+        this.username = this.cookieServive.get("userId");
     }
 }
