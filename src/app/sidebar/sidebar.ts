@@ -36,4 +36,21 @@ export class Sidebar implements OnInit {
       }
     }
   }
+
+  toggleTheme(): void {
+  const isDark = document.body.classList.contains('dark-mode');
+  document.body.classList.toggle('dark-mode');
+
+  if (this._header) {
+    if (!isDark) {
+      this._header.classList.remove('navbar-white', 'navbar-light');
+      this._header.classList.add('navbar-dark', 'navbar-primary');
+    } else {
+      this._header.classList.remove('navbar-dark', 'navbar-primary');
+      this._header.classList.add('navbar-white', 'navbar-light');
+    }
+  }
+
+  localStorage.setItem('adminlte-theme', isDark ? 'light' : 'dark');
+}
 }
