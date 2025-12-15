@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Routes, CanActivateFn } from '@angular/router';
 import { Dashboard } from './dashboard/dashboard';
 import { Login } from './login/login';
 import { Register } from './register/register';
@@ -9,6 +9,7 @@ import { Mahasiswa } from './mahasiswa/mahasiswa';
 import { otentikasiGuard } from './otentikasi-guard';
 import { Logout } from './logout/logout';
 import { Forex } from './forex/forex';
+import { Cuaca } from './cuaca/cuaca';
 
 export const routes: Routes = [
     {path: "", redirectTo: "login", pathMatch: "full"},
@@ -20,5 +21,6 @@ export const routes: Routes = [
     {path: "admin", component: Admin},
     {path: "mahasiswa", component: Mahasiswa, canActivate: [otentikasiGuard]},
     {path: "logout", component: Logout},
-    {path: "forex", component: Forex, canActivate: [otentikasiGuard]}
-];
+    {path: "forex", component: Forex, canActivate: [otentikasiGuard]},
+    {path: "cuaca", component: Cuaca, canActivate: [otentikasiGuard]}
+    ];
