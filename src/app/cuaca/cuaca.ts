@@ -1,124 +1,150 @@
 import { AfterViewInit, Component, Renderer2 } from '@angular/core';
-import { Header } from "../header/header";
-import { Sidebar } from "../sidebar/sidebar";
-import { RouterLink, RouterLinkActive, RouterModule } from "@angular/router";
-import { Footer } from "../footer/footer";
 import { HttpClient } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common'; // Penting untuk *ngIf dan pipe number
+import * as L from 'leaflet';
+import { Footer } from '../footer/footer';
+import { Header } from '../header/header';
+import { Sidebar } from '../sidebar/sidebar';
 
 declare const $: any;
 declare const moment: any;
 
 @Component({
   selector: 'app-cuaca',
-  imports: [Header, Sidebar, RouterLink, RouterLinkActive, Footer,],
+  standalone: true,
+  imports: [Header, Sidebar, Footer, RouterModule, CommonModule],
   templateUrl: './cuaca.html',
   styleUrl: './cuaca.css',
 })
 export class Cuaca implements AfterViewInit {
   private table1: any;
+  public currentWeather: any = null; // Data untuk Card Atas
+  public todayDate: string = "";
+  private map: any; // Variabel untuk Peta
 
   constructor(private renderer: Renderer2, private http: HttpClient) {
     this.renderer.removeClass(document.body, "sidebar-open");
     this.renderer.addClass(document.body, "sidebar-closed");
+    this.todayDate = moment().format('DD MMM YYYY');
   }
 
   ngAfterViewInit(): void {
-  this.table1 = $("#table1").DataTable({
-    columnDefs: [
-      {
-        targets: 0,
-        render: function (data: string) {
-          const waktu = moment(data + " UTC");
-          console.log(waktu);
-
-          const html =
-            waktu.local().format("YYYY-MM-DD") +
-            "<br />" +
-            waktu.local().format("HH:mm") +
-            " WIB";
-
-          return html;
+    this.table1 = $("#table1").DataTable({
+      columnDefs: [
+        {
+          targets: 0,
+          render: function (data: string) {
+            const waktu = moment.utc(data);
+            return waktu.local().format("YYYY-MM-DD") + "<br />" + waktu.local().format("HH:mm") + " WIB";
+          },
         },
-      },
-      {
-        targets: [1],
-        render: function (data: string) {
-          return"<img src='" + data + "' style='filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.7));' />";
-        }
-      }, {
-        targets: [2],
-        render: function (data: string) {
-          const array = data.split("||");
-          const cuaca = array[0];
-          const description = array[1];
-          const html = "<strong>" + cuaca + "</strong><br />" + description;
-
-          return html;
+        {
+          targets: [1],
+          render: function (data: string) {
+            return "<img src='" + data + "' style='filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.7));' />";
+          },
         },
-      },
-      // ... (lanjutan columnDefs atau opsi DataTable lainnya)
-    ],
-    // ... (opsi DataTable lainnya)
-  });
-}
-
-  getData(city: string): void {
-  city = encodeURIComponent(city);
-
-  this.http
-    .get(`http://api.openweathermap.org/data/2.5/forecast?q=pontianak&appid=a31086b15b2435ec5ab40ae61912f9bf`)
-    .subscribe((data: any) => {
-      let list = data.list;
-      console.log(list);
-
-      this.table1.clear();
-
-      list.forEach((element: any) => {
-        const weather = element.weather[0];
-        console.log(weather);
-
-        const iconUrl = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
-        const cuacaDeskripsi = weather.main + " || " + weather.description;
-
-        const main = element.main;
-        console.log(main);
-
-        const tempMin = this.kelvinToCelcius(main.temp_min);
-        console.log({tempMin});
-
-        const tempMax = this.kelvinToCelcius(main.temp_max);
-        console.log({tempMax});
-
-        const temp = tempMin + "°C - " + tempMax + "°C";
-
-        const row = [element.dt_txt, iconUrl, cuacaDeskripsi, temp];
-
-        this.table1.row.add(row);
-      });
-
-      this.table1.draw(false);
-    }, (error: any) => {
-      alert(error.error.message);
-      this.table1.clear();
-      this.table1.draw(false);
+        {
+          targets: [2],
+          render: function (data: string) {
+            const array = data.split("||");
+            return "<strong>" + array[0] + "</strong> <br />" + array[1];
+          },
+        },
+      ],
     });
   }
 
-  kelvinToCelcius(kelvin: any): any {
-  let celcius = kelvin - 273.15;
-  celcius = Math.round(celcius * 100) / 100;
+  getData(city: string): void {
+    if (!city) return;
+    city = encodeURIComponent(city);
+    const apiKey = "8f28289c76abb88de9ef8f4da8321ad1"; // Ganti dengan API Key Anda sendiri jika limit
 
-  return celcius;
-}
+    // 1. AMBIL DATA CUACA SAAT INI (Current Weather)
+    this.http.get(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`)
+      .subscribe((data: any) => {
+        this.currentWeather = data; // Simpan data ke variabel
 
-handleEnter(event: any) {
-  const cityName = event.target.value;
+        // Inisialisasi Peta setelah data didapat
+        setTimeout(() => {
+          this.initMap(data.coord.lat, data.coord.lon);
+        }, 100);
+      }, (err) => {
+        alert("Kota tidak ditemukan (Current Weather)");
+      });
 
-  if (cityName == "") {
-    this.table1.clear();
-    this.table1.draw(false);
+    // 2. AMBIL DATA FORECAST (Untuk Tabel)
+    this.http.get(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}`)
+      .subscribe((data: any) => {
+        let list = data.list;
+        this.table1.clear();
+
+        list.forEach((element: any) => {
+          const weather = element.weather[0];
+          const iconUrl = "https://openweathermap.org/img/wn/" + weather.icon + "@2x.png";
+          const cuacaDeskripsi = weather.main + " || " + weather.description;
+
+          // Data untuk kolom Keterangan
+          const tempMin = this.kelvinToCelcius(element.main.temp_min);
+          const tempMax = this.kelvinToCelcius(element.main.temp_max);
+          const windSpeed = element.wind.speed;
+          const humidity = element.main.humidity;
+
+          const keterangan = `
+            <strong>Temp:</strong> ${tempMin}°C - ${tempMax}°C <br />
+            <strong>Wind:</strong> ${windSpeed} m/s <br />
+            <strong>Hum:</strong> ${humidity}%
+          `;
+
+          const row = [element.dt_txt, iconUrl, cuacaDeskripsi, keterangan];
+          this.table1.row.add(row);
+        });
+
+        this.table1.draw(false);
+      }, (error: any) => {
+        // Error handling
+      });
   }
 
-  this.getData(cityName);
+  // --- Fungsi Helper untuk HTML ---
+
+  initMap(lat: number, lon: number) {
+    // Hapus map lama jika sudah ada (agar tidak error map already initialized)
+    if (this.map) {
+      this.map.remove();
+    }
+
+    // Buat map baru
+    this.map = L.map('map-container').setView([lat, lon], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    L.marker([lat, lon]).addTo(this.map)
+      .bindPopup(`Lokasi: ${this.currentWeather.name}`)
+      .openPopup();
+  }
+
+  kelvinToCelcius(kelvin: any): any {
+    return (kelvin - 273.15).toFixed(0);
+  }
+
+  getWeatherIconUrl(iconCode: string): string {
+    return `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
+  }
+
+  getWindDirection(deg: number): string {
+    const val = Math.floor((deg / 22.5) + 0.5);
+    const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+    return arr[val % 16];
+  }
+
+  handleEnter(event: any) {
+    const cityName = event.target.value;
+    if (cityName && cityName.trim() !== "") {
+      this.getData(cityName);
+    }
   }
 }
